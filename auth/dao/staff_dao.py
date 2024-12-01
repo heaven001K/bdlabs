@@ -58,40 +58,50 @@ class StaffDAO:
             cursor.close()
 
     @staticmethod
-    def get_all_staff_with_airline():
+    def get_airlines_with_staff():
         """
-        Повертає всіх співробітників із деталями авіакомпанії.
+        Повертає всі авіакомпанії з їхніми працівниками.
         """
         conn = g.mysql.connection
         cursor = conn.cursor()
-        query = """
-        SELECT 
-            staff.staff_id, 
-            staff.airline_id, 
-            airlines.name AS airline_name, 
-            staff.first_name, 
-            staff.last_name, 
-            staff.position, 
-            staff.hire_date, 
-            staff.created_at
-        FROM 
-            staff
-        INNER JOIN 
-            airlines ON staff.airline_id = airlines.airline_id
-        """
-        cursor.execute(query)
-        staff = cursor.fetchall()
-        cursor.close()
 
-        return [
-            {
-                "staff_id": row[0],
-                "airline_id": row[1],
-                "airline_name": row[2],
-                "first_name": row[3],
-                "last_name": row[4],
-                "position": row[5],
-                "hire_date": row[6],
-                "created_at": row[7]
-            } for row in staff
-        ]
+        # Перший запит для отримання всіх авіакомпаній
+        query_airlines = "SELECT airline_id, name FROM airlines"
+        cursor.execute(query_airlines)
+        airlines = cursor.fetchall()
+
+        result = []
+
+        # Для кожної авіакомпанії отримуємо працівників
+        for airline in airlines:
+            airline_id = airline[0]
+            airline_name = airline[1]
+
+            # Запит для отримання працівників авіакомпанії
+            query_staff = """
+                    SELECT staff_id, first_name, last_name, position, hire_date, created_at
+                    FROM staff WHERE airline_id = %s
+                """
+            cursor.execute(query_staff, (airline_id,))
+            staff = cursor.fetchall()
+
+            # Формуємо структуру даних для відповіді
+            staff_list = [
+                {
+                    "staff_id": row[0],
+                    "first_name": row[1],
+                    "last_name": row[2],
+                    "position": row[3],
+                    "hire_date": row[4],
+                    "created_at": row[5]
+                } for row in staff
+            ]
+
+            result.append({
+                "airline_id": airline_id,
+                "airline_name": airline_name,
+                "staff": staff_list
+            })
+
+        cursor.close()
+        return result

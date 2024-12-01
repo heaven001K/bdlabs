@@ -45,3 +45,7 @@ def get_flights_for_user(user_id):
 def get_users_for_flight(flight_id):
     users = Service.get_users_for_flight(flight_id)
     return jsonify(users)
+
+
+
+

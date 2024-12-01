@@ -1,7 +1,11 @@
 from auth.dto.flight_dto import FlightDTO
+
 from flask import g
 from collections import defaultdict
 from itertools import groupby
+
+from auth.dto.user_dto import UserDTO
+
 
 class FlightDAO:
     @staticmethod
@@ -24,43 +28,36 @@ class FlightDAO:
             conn.commit()
             cursor.close()
 
-    @staticmethod
-    def get_flights_grouped_by_city():
-        conn = g.mysql.connection
-        cursor = conn.cursor()
 
-        query = '''
-            SELECT 
-                departure.location AS departure_city,
-                arrival.location AS arrival_city,
-                flight_number,
-                departure_time,
-                arrival_time
-            FROM flights
-            JOIN airports AS departure ON flights.departure_airport_id = departure.airport_id
-            JOIN airports AS arrival ON flights.arrival_airport_id = arrival.airport_id
-            ORDER BY departure.location, arrival.location
-        '''
-        cursor.execute(query)
-        flights = cursor.fetchall()
+
+    @staticmethod
+    def get_flights_by_aircraft_and_country():
+        conn = g.mysql.connection
+        with conn.cursor() as cursor:
+            query = '''
+                    SELECT 
+                        flight_number,
+                        departure.location AS departure_city,
+                        departure.location AS departure_country
+                    FROM flights
+                    JOIN airports AS departure ON flights.departure_airport_id = departure.airport_id
+                    ORDER BY departure.location
+                '''
+            cursor.execute(query)
+            flights = cursor.fetchall()
 
         # Перетворення результатів у список словників
         flights_list = [
             {
-                'departure_city': flight[0],
-                'arrival_city': flight[1],
-                'flight_number': flight[2],
-                'departure_time': flight[3],
-                'arrival_time': flight[4]
+                'flight_number': flight[0],
+                'departure_country': flight[2].split(',')[-1].strip()  # Отримуємо країну з location
             }
-            for flight in flights
+            for flight in flights if flight
         ]
 
-        cursor.close()
-
-        # Групуємо за містом відправлення
+        # Групуємо за країною відправлення
         grouped_flights = defaultdict(list)
         for flight in flights_list:
-            grouped_flights[flight['departure_city']].append(flight)
+            grouped_flights[flight['departure_country']].append(flight)
 
         return dict(grouped_flights)

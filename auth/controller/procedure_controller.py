@@ -74,3 +74,29 @@ def create_databases_and_tables():
     except Exception as e:
         return jsonify({'error': f"Server error: {str(e)}"}), 500
 
+
+
+@procedure_bp.route('/insert-flight-airline', methods=['POST'])
+def insert_flight_airline():
+    """
+    Контролер для виклику процедури InsertIntoFlightAirline.
+    Очікує JSON із ключами:
+    - flight_number: Номер рейсу
+    - airline_name: Назва авіалінії
+    """
+    data = request.json
+
+    # Перевірка наявності необхідних даних у запиті
+    if 'flight_number' not in data or 'airline_name' not in data:
+        return jsonify({'success': False, 'message': 'Missing required fields: flight_number, airline_name'}), 400
+
+    flight_number = data['flight_number']
+    airline_name = data['airline_name']
+
+    # Виклик методу DAO
+    success, error_message = ProcedureDao.insert_into_flight_airline(flight_number, airline_name)
+
+    if success:
+        return jsonify({'success': True, 'message': 'Record successfully inserted into flight_airline'}), 200
+    else:
+        return jsonify({'success': False, 'message': error_message}), 500

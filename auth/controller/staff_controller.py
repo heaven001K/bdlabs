@@ -51,60 +51,10 @@ def delete_staff(staff_id):
         return jsonify({'error': f'Failed to delete staff member: {result[1]}'}), 500
 
 # Отримуємо список співробітників разом з авіакомпаніями
-@staff_bp.route('/staff_with_airlines', methods=['GET'])
-def get_staff_with_airlines():
-    conn = g.mysql.connection
-    cursor = conn.cursor()
-
-    # Отримуємо список авіаліній
-    query_airlines = "SELECT airline_id, name FROM airlines"
-    cursor.execute(query_airlines)
-    airlines = cursor.fetchall()
-    airlines_list = [
-        {"airline_id": row[0], "name": row[1]}
-        for row in airlines
-    ]
-
-    # Отримуємо список співробітників із прив'язкою до авіаліній
-    query_staff = """
-    SELECT 
-        staff.staff_id, 
-        staff.airline_id, 
-        staff.first_name, 
-        staff.last_name, 
-        staff.position, 
-        staff.hire_date, 
-        staff.created_at, 
-        airlines.name AS airline_name
-    FROM 
-        staff
-    LEFT JOIN 
-        airlines 
-    ON 
-        staff.airline_id = airlines.airline_id
+@staff_bp.route('/airlines_with_staff', methods=['GET'])
+def get_airlines_with_staff():
     """
-    cursor.execute(query_staff)
-    staff = cursor.fetchall()
-    staff_list = [
-        {
-            "staff_id": row[0],
-            "airline_id": row[1],
-            "airline_name": row[7],  # Назва авіакомпанії
-            "first_name": row[2],
-            "last_name": row[3],
-            "position": row[4],
-            "hire_date": row[5],
-            "created_at": row[6]
-        }
-        for row in staff
-    ]
-
-    cursor.close()
-
-    # Формуємо JSON-відповідь
-    response = {
-        "airlines": airlines_list,
-        "staff": staff_list
-    }
-
-    return jsonify(response), 200
+    Повертає всі авіакомпанії з їхніми працівниками.
+    """
+    airlines_with_staff = StaffDAO.get_airlines_with_staff()
+    return jsonify(airlines_with_staff), 200

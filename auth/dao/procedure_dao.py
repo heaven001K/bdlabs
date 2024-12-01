@@ -77,3 +77,24 @@ class ProcedureDao:
             return False, str(e)
         finally:
             cursor.close()
+
+    @staticmethod
+    def insert_into_flight_airline(flight_number, airline_name):
+        """
+        Викликає процедуру InsertIntoFlightAirline.
+        :param flight_number: Номер рейсу
+        :param airline_name: Назва авіалінії
+        """
+        conn = g.mysql.connection
+        cursor = conn.cursor()
+
+        try:
+            # Викликаємо процедуру з параметрами
+            cursor.callproc('InsertIntoFlightAirline', [flight_number, airline_name])
+            conn.commit()  # Фіксуємо зміни
+            return True, None  # Успішне виконання
+        except Exception as e:
+            conn.rollback()  # Відміняємо зміни у разі помилки
+            return False, str(e)  # Повертаємо повідомлення про помилку
+        finally:
+            cursor.close()
